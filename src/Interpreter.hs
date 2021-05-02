@@ -20,7 +20,7 @@ data StackElem = Ttypes Ttypes | Tlist[Ttypes] deriving Show
 
 --type Stack = [Maybe StackElem]
 type Stack = [StackElem]
-type ProgState = State Stack Stack
+--type ProgState = State Stack Stack
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
@@ -49,12 +49,26 @@ tokenCheck (x:xs) = do
     --putStrLn x
 
 --addStack :: StackElem -> ProgState
-addStack :: StackElem -> ProgState
-addStack x = do
-    stack <- get
-    let newStack = x : stack
-    put newStack
-    return newStack
+--addStack :: StackElem -> ProgState
+--addStack x = do
+--    stack <- get
+--    let newStack = x : stack
+--    put newStack
+--    return newStack
 
+push :: Stack -> StackElem -> Stack
+push stack x = x : stack
 
-tCheck xs = head xs
+pop :: Stack -> Stack
+pop [] = error "CXannot pop empty stack dummy"
+pop x = tail x
+
+swap :: Stack -> Stack
+swap (a:b:xs) = b : a : xs
+swap _ = error "Cannot swap, less than two elements"
+
+dup :: Stack -> Stack
+dup (x:xs) = x : x : xs
+dup _ = error "Cannot dup, stack empty"
+
+--tCheck xs = head xs
