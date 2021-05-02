@@ -8,7 +8,9 @@ main :: IO ()
 --main = interact $ unlines . map processLine . lines
 --main = interact (map toUpper)
 main = do
-    line <- getContents
-    let x = line
+    let u = Ttypes (Tint 5)
+    addStack u
+    --line <- getContents
+    --let x = line
     --putStrLn(x)
-    print x
+    --print x
