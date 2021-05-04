@@ -51,7 +51,24 @@ parse (x:xs) stack
         let newStack = push stack (fst elem)
         parse (snd elem) newStack
 
+    -- | x == "[" = 
 
+    -- Check for int
+    | isJust (makeTint x) = do
+        let newStack = push stack (fromJust $ makeTint x)
+        parse xs newStack
+
+    -- Checks float
+    | isJust (makeTfloat x) = do
+        let newStack = push stack (fromJust $ makeTfloat x)
+        parse xs newStack
+
+    --Checks for bool
+    | isJust (makeTbool x) = do
+        let newStack = push stack (fromJust $ makeTbool x)
+        parse xs newStack
+    
+    | otherwise = error ("Neeey, there hath been a parsing error: Cannot parse " ++ "\"" ++ x ++ "\"")
 
 
 makeTstring :: [String] -> (StackElem, [String])
