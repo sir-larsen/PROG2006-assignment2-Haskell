@@ -40,6 +40,27 @@ toWords x = words x
 --processTokens (x:xs)
 --    | x == 
 
+-- | Creating the tokens HUSK Å KOMMENTER VEKK DENNE IGJEN
+--parse :: [String] -> Stack -> Stack
+--parse [] stack = stack
+--parse (x:xs) Stack
+--
+--    -- Check string
+--    | x == "\"" = do
+--        let newStack =
+
+
+makeTstring :: [String] -> (StackElem, [String])
+makeString s = do
+    let stop = elemIndex "\"" s
+    let str  = [s !! i | i <- [0..length s], i < fromJust stop]
+    let rstr = drop (length str + 1) s
+    case isJust stop of
+        True  -> (Ttypes (Tstring $ unwords str), rstr)
+        False -> error "Thou hath encountered syntax error. No closing symbol for string jest"
+        
+makeTint :: String -> StackElem
+
 tokenCheck :: [String] -> IO ()
 tokenCheck (x:xs) = do
     putStrLn(x)
@@ -70,5 +91,7 @@ swap _ = error "Cannot swap, less than two elements"
 dup :: Stack -> Stack
 dup (x:xs) = x : x : xs
 dup _ = error "Cannot dup, stack empty"
+
+
 
 --tCheck xs = head xs
