@@ -14,8 +14,16 @@ main = do
     --line <- getContents
     code <- getLine
     let x = words code
-    let elem = makeTstring x
+    --let elem = makeTstring x
+    --print $ elem
+    let elem = parse x []
     print $ elem
+    
+
+    -- gameloop (stack)
+        --parse oga
+        -- DO gameloop newstack
+
     --let x = line
     --putStrLn(x)
     --let f = words x

@@ -41,13 +41,17 @@ toWords x = words x
 --    | x == 
 
 -- | Creating the tokens HUSK Å KOMMENTER VEKK DENNE IGJEN
---parse :: [String] -> Stack -> Stack
---parse [] stack = stack
---parse (x:xs) Stack
---
---    -- Check string
---    | x == "\"" = do
---        let newStack =
+parse :: [String] -> Stack -> Stack
+parse [] stack = stack
+parse (x:xs) stack
+
+    -- Check string
+    | x == "\"" = do
+        let elem = makeTstring xs
+        let newStack = push stack (fst elem)
+        parse (snd elem) newStack
+
+
 
 
 makeTstring :: [String] -> (StackElem, [String])
