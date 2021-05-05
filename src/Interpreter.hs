@@ -137,37 +137,6 @@ parse (x:xs) stack
                 parse xs newStack2
             _ -> error "Failed to parse float"
 
-    {-|-- Check string
-    | x == "\"" = do
-        let elem = makeTstring xs
-        let newStack = push stack (fst elem)
-        parse (snd elem) newStack
-
-    -- Parsing lists
-    | x == "[" = do
-        let elem = makeTlist xs
-        let newStack = push stack (Tlist (fst elem))
-        parse (snd elem) newStack
-
-
-    -- Check for int
-    | isJust (makeTint x) = do
-        let newStack = push stack (fromJust $ makeTint x)
-        parse xs newStack
-
-    -- Checks float
-    | isJust (makeTfloat x) = do
-        let newStack = push stack (fromJust $ makeTfloat x)
-        parse xs newStack
-
-    --Checks for bool
-    | isJust (makeTbool x) = do
-        let newStack = push stack (fromJust $ makeTbool x)
-        parse xs newStack
-    
-    -- Error on illegal input
-    | otherwise = error ("Neeey, there hath been a parsing error: Cannot parse " ++ "\"" ++ x ++ "\"")
-    -}
     -- Parses our strings to Bstrings
     | x == "\""= do
         let newStack = push stack (fst bstring)
@@ -207,33 +176,6 @@ parseToObj :: [String] -> [StackElem] -> [StackElem]
 parseToObj [] lst = lst
 parseToObj (x:xs) lst
     
-{-|    | x == "\"" = do
-        let elem = makeTstring xs
-        --let conLst = Tlist [fst elem]
-        let newLst = lst ++ [fst elem]
-        parseToObj (snd elem) newLst
-    
-    | x == "[" = do
-        let elem = makeTlist xs
-        let newLst = [(Tlist (fst elem))] ++ lst
-        parse (snd elem) newLst
-
-    | isJust (makeTint x) = do
-        let newLst = lst ++ [(fromJust $ makeTint x)]
-        parseToObj xs newLst
-    
-    
-    | isJust (makeTfloat x) = do
-        let newLst = lst ++ [(fromJust $ makeTfloat x)]
-        parseToObj xs newLst
-    
-    
-    | isJust (makeTbool x) = do
-        let newLst = lst ++ [(fromJust $ makeTbool x)]
-        parseToObj xs newLst
-
-    | otherwise = error ("Something is bad regarding the parsing of types within lists: Cannot parse " ++ "\"" ++ x ++ "\"")
--}
     | x == "\"" = do
         let elem = bstring
         --let conLst = Tlist [fst elem]
@@ -374,50 +316,6 @@ makeTstring s = do
     case isJust stop of
         True  -> (Ttypes (Tstring $ unwords str), rstr)
         False -> error "Thou hath encountered syntax error. No closing symbol for string jest"
-{-|        
-makeTint :: String -> Maybe StackElem
-makeTint s
-    | isInt s == True = Just (Ttypes (CustomNuma(Tint (read s :: Int)))
-    | otherwise = Nothing
-
-makeTfloat :: String -> Maybe StackElem
-makeTfloat s
-    | isFloat s == True = Just (Ttypes (CustomNuma(Tfloat (read s :: Float)))
-    | otherwise = Nothing
-
-makeTbool :: String -> Maybe StackElem
-makeTbool s
-    | isBool s == True = Just (Ttypes (Tbool (read s :: Bool)))
-    | otherwise = Nothing
-
-isBool :: String -> Bool
-isBool x
-    | x == "True" = True
-    | x == "False" = True
-    | otherwise = False
-
--- | Function for checking if an Int really is an Int. Inspired for stackoverflow
---https://stackoverflow.com/questions/30029029/haskell-check-if-string-is-valid-number
-isInt :: String -> Bool
-isInt ""  = False
-isInt "." = False
-isInt xs =
-    case dropWhile isDigit xs of
-        "" -> True
-        _  -> False
-
-isFloat :: String -> Bool
-isFloat ""  = False
-isFloat "." = False
-isFloat xs  =
-    case dropWhile isDigit xs of
-        "" -> True
-        ('.':ys) -> all isDigit ys
-        _ -> False
--}
-
-
-
 
 -- | Makes an Integer of our own type
 makeTint2 :: String -> (StackElem, Bool)
