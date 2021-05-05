@@ -14,3 +14,6 @@ stack run
 ```
 
 # REPL mode
+Input literals and do calculations
+
+# Did not implement tests because of time constraints
