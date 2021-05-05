@@ -51,11 +51,10 @@ parse (x:xs) stack
         let newStack = push stack (fst elem)
         parse (snd elem) newStack
 
-    -- | x == "[" = do
-    --    let elem = makeTlist xs
-    --    let newStack = push stack (head (head elem))
-    --    let remainingString = cutLength xs
-    --    parse xs newStack
+    | x == "[" = do
+        let elem = makeTlist xs
+        let newStack = push stack (Tlist (fst elem))
+        parse (snd elem) newStack
 
 
     -- Check for int
@@ -85,7 +84,10 @@ parseToObj (x:xs) lst
         let newLst = lst ++ [fst elem]
         parseToObj (snd elem) newLst
     
-    -- | x == "[" = makeTlist
+    | x == "[" = do
+        let elem = makeTlist xs
+        let newLst = [(Tlist (fst elem))] ++ lst
+        parse (snd elem) newLst
 
     | isJust (makeTint x) = do
         let newLst = lst ++ [(fromJust $ makeTint x)]
@@ -107,14 +109,19 @@ parseToObj (x:xs) lst
 
 --makeTlist :: [String] -> ([StackElem], [String])
 --makeTlist :: Monad m => [String] -> m ([StackElem], [String])
-makeTlist :: Monad m => [[Char]] -> m [StackElem]
+--makeTlist :: Monad m => [[Char]] -> m [StackElem]
+makeTlist :: [String] -> ([StackElem], [String])
 makeTlist s = do
     let numNest = cnt "[" s
+    let stop2 = elemIndex "]" s
     let stop = last (findIndices (=="]") s)
     let lst = [s !! i | i <- [0..length s], i < stop]
     let remaining = drop (length lst + 1) s
     let completeLst = parseToObj lst []-- send lst til parseToObj
-    return completeLst
+    --return completeLst
+    case isJust stop2 of
+        True  -> (completeLst, remaining)
+        False -> error "Thou hath not c"
 
 --cutLength :: Monad m => [[Char]] -> m [[Char]]
 cutLength s = do
@@ -197,6 +204,9 @@ cnt a (x:xs) -- same as using head
 
 push :: Stack -> StackElem -> Stack
 push stack x = x : stack
+
+push2 :: Stack -> [StackElem] -> Stack
+push2 stack xs = stack ++ xs
 
 pop :: Stack -> Stack
 pop [] = error "CXannot pop empty stack dummy"
