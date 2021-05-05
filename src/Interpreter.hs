@@ -60,6 +60,10 @@ instance Show StackElem where
     show (Ttypes i) = show i
     show (Tlist i) = show i
 
+-- | Prints out our stack type
+printStack :: Stack -> IO()
+printStack s = print s
+
 toWords :: String -> [String]
 toWords x = words x
 
@@ -74,7 +78,7 @@ parse (x:xs) stack
         parse xs newStack
 
     -- - operator for ints and floats
-    x == "-" = do
+    | x == "-" = do
         let newStack = sub stack
         parse xs newStack
     
@@ -118,7 +122,7 @@ parse (x:xs) stack
         let (popped, newStack) = pop stack
         case popped of
             (Ttypes (Tstring s)) -> do
-                let a = fromJust (makeTint s)
+                let (a, b) = makeTint2 s
                 let newStack2 = push newStack (a)
                 parse xs newStack2
             _ -> error "Failed to parse int"
@@ -128,12 +132,12 @@ parse (x:xs) stack
         let (popped, newStack) = pop stack
         case popped of
             (Ttypes (Tstring s)) -> do
-                let a = fromJust (makeTfloat s)
+                let (a, b) = makeTfloat2 s
                 let newStack2 = push newStack (a)
                 parse xs newStack2
             _ -> error "Failed to parse float"
 
-    -- Check string
+    {-|-- Check string
     | x == "\"" = do
         let elem = makeTstring xs
         let newStack = push stack (fst elem)
@@ -163,13 +167,47 @@ parse (x:xs) stack
     
     -- Error on illegal input
     | otherwise = error ("Neeey, there hath been a parsing error: Cannot parse " ++ "\"" ++ x ++ "\"")
+    -}
+    -- Parses our strings to Bstrings
+    | x == "\""= do
+        let newStack = push stack (fst bstring)
+        parse (snd bstring) newStack
+
+    -- Parsing lists
+    | x == "[" = do
+        let list = makeTlist xs
+        let newStack = push stack (Tlist(fst list))
+        parse (snd list) newStack
+
+    -- Parses our ints to Bpints
+    | intbool == True = do
+        let newStack = push stack (bint)
+        parse xs newStack
+
+    -- Parses our floats to Bpfloats
+    | floatbool == True = do
+        let newStack = push stack (bfloat)
+        parse xs newStack
+
+    -- Parses our bools to Bpbools
+    | boolbool == True = do
+        let newStack = push stack (bbool)
+        parse xs newStack
+
+    -- Error on illegal input
+    | otherwise = error "Error. Thou may not enter illegal datatypes!"
+    where
+        bstring = makeTstring xs
+        (bint, intbool) = makeTint2 x
+        (bfloat, floatbool) = makeTfloat2 x
+        (bbool, boolbool) = makeTbool2 x
 
 -- Parsing of the objects within a list
 parseToObj :: [String] -> [StackElem] -> [StackElem]
 parseToObj [] lst = lst
 parseToObj (x:xs) lst
     
-    | x == "\"" = do
+{-|    | x == "\"" = do
         let elem = makeTstring xs
         --let conLst = Tlist [fst elem]
         let newLst = lst ++ [fst elem]
@@ -195,7 +233,38 @@ parseToObj (x:xs) lst
         parseToObj xs newLst
 
     | otherwise = error ("Something is bad regarding the parsing of types within lists: Cannot parse " ++ "\"" ++ x ++ "\"")
+-}
+    | x == "\"" = do
+        let elem = bstring
+        --let conLst = Tlist [fst elem]
+        let newLst = lst ++ [fst elem]
+        parseToObj (snd elem) newLst
 
+    | x == "[" = do
+        let elem = makeTlist xs
+        --let newLst = [(Tlist (fst elem))] ++ lst
+        let newLst = lst ++ [(Tlist (fst elem))]
+        parseToObj (snd elem) newLst
+
+    |  intbool == True = do
+        let newLst = lst ++ [bint]
+        parseToObj xs newLst
+
+    |  floatbool == True = do
+        let newLst = lst ++ [bfloat]
+        parseToObj xs newLst
+
+    |  boolbool == True = do
+        let newLst = lst ++ [bbool]
+        parseToObj xs newLst
+
+    | otherwise = error ("Error cannot parse: " ++ "\"" ++ x ++ "\"")
+
+    where
+        bstring = makeTstring xs
+        (bint, intbool) = makeTint2 x
+        (bfloat, floatbool) = makeTfloat2 x
+        (bbool, boolbool) = makeTbool2 x
 
 -- | The multiplication function
 mult :: Stack -> Stack
@@ -305,15 +374,15 @@ makeTstring s = do
     case isJust stop of
         True  -> (Ttypes (Tstring $ unwords str), rstr)
         False -> error "Thou hath encountered syntax error. No closing symbol for string jest"
-        
+{-|        
 makeTint :: String -> Maybe StackElem
 makeTint s
-    | isInt s == True = Just (Ttypes (Tint (read s :: Int)))
+    | isInt s == True = Just (Ttypes (CustomNuma(Tint (read s :: Int)))
     | otherwise = Nothing
 
 makeTfloat :: String -> Maybe StackElem
 makeTfloat s
-    | isFloat s == True = Just (Ttypes (Tfloat (read s :: Float)))
+    | isFloat s == True = Just (Ttypes (CustomNuma(Tfloat (read s :: Float)))
     | otherwise = Nothing
 
 makeTbool :: String -> Maybe StackElem
@@ -345,6 +414,58 @@ isFloat xs  =
         "" -> True
         ('.':ys) -> all isDigit ys
         _ -> False
+-}
+
+
+
+
+-- | Makes an Integer of our own type
+makeTint2 :: String -> (StackElem, Bool)
+makeTint2 s
+    | isInt s == True = ((Ttypes (CustomNuma( Tint (read s :: Int)))), True)
+    | otherwise = ((Ttypes (Tnothing)), False)
+
+-- | Makes a float of our own type
+makeTfloat2 :: String ->(StackElem, Bool)
+makeTfloat2 s
+    | isFloat s == True = ((Ttypes (CustomNuma( Tfloat (read s :: Float)))), True)
+    | otherwise = ((Ttypes (Tnothing)), False)
+    
+-- | Function for checking if an Int really is an Int. Inspired for stackoverflow
+--https://stackoverflow.com/questions/30029029/haskell-check-if-string-is-valid-number
+isInt :: String -> Bool
+isInt ""  = False
+isInt "." = False
+isInt xs  =
+  case dropWhile isDigit xs of
+    ""       -> True
+    _        -> False
+-- | Same as above but for floats
+isFloat :: String -> Bool
+isFloat ""  = False
+isFloat "." = False
+isFloat xs  =
+  case dropWhile isDigit xs of
+    ""       -> True
+    ('.':ys) -> all isDigit ys
+    _        -> False
+
+-- | Checks if a string represents a bool
+isBool :: String -> Bool
+isBool x
+    | x == "True" = True
+    | x == "False" = True
+    | otherwise = False
+
+-- | Creates a bool of our own datatype
+makeTbool2 :: String -> (StackElem, Bool)
+makeTbool2 s
+    | isBool s == True = ((Ttypes (Tbool (read s :: Bool))), True)
+    | otherwise = ((Ttypes (Tnothing)), False)
+
+
+
+
 
 -- | Checking how many times a thing is in a list 3.
 cnt ::  (Eq a) => a -> [a] -> Int
