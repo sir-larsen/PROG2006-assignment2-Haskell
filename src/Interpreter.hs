@@ -49,20 +49,21 @@ instance Fractional CustomNum where
     (Tfloat i) / (Tint i2) = Tfloat (i / fromIntegral(i2))
 
 -- | Instance making our stack look as desired when printed
-instance Show Btypes where
+instance Show Ttypes where
     show (CustomNuma i) = show i
     show (Tbool i) = "Tbool " ++ show i
     show (Tstring i) = "Tstring " ++ show i
   
     
 -- | Instance making our stack look as desired when printed
-instance Show BprogElement where
+instance Show StackElem where
     show (Ttypes i) = show i
+    show (Tlist i) = show i
 
 toWords :: String -> [String]
 toWords x = words x
 
--- | Creating the tokens HUSK Å KOMMENTER VEKK DENNE IGJEN
+-- | Creating the tokens
 parse :: [String] -> Stack -> Stack
 parse [] stack = stack
 parse (x:xs) stack
@@ -160,8 +161,10 @@ parse (x:xs) stack
         let newStack = push stack (fromJust $ makeTbool x)
         parse xs newStack
     
+    -- Error on illegal input
     | otherwise = error ("Neeey, there hath been a parsing error: Cannot parse " ++ "\"" ++ x ++ "\"")
 
+-- Parsing of the objects within a list
 parseToObj :: [String] -> [StackElem] -> [StackElem]
 parseToObj [] lst = lst
 parseToObj (x:xs) lst
@@ -191,7 +194,94 @@ parseToObj (x:xs) lst
         let newLst = lst ++ [(fromJust $ makeTbool x)]
         parseToObj xs newLst
 
-    | otherwise = error ("Something is fucked regarding the parsing of types within lists: Cannot parse " ++ "\"" ++ x ++ "\"")
+    | otherwise = error ("Something is bad regarding the parsing of types within lists: Cannot parse " ++ "\"" ++ x ++ "\"")
+
+
+-- | The multiplication function
+mult :: Stack -> Stack
+mult stack = newStack
+    where
+        (secondEl, firstPop) = pop stack
+        (firstEl, secondPop) = pop firstPop
+        result = mult2 firstEl secondEl
+        newStack = push secondPop (result)
+
+-- | utilized by the mult function to use the * operator
+mult2 :: StackElem -> StackElem -> StackElem
+mult2 a b = do
+    case a of
+        (Ttypes( CustomNuma i)) -> case b of
+            (Ttypes( CustomNuma y)) -> (Ttypes ( CustomNuma (i * y)))
+            _ -> undefined
+        _ -> undefined
+
+-- | The function used for addition
+add :: Stack -> Stack
+add stack = newStack
+    where
+        (secondEl, firstPop) = pop stack
+        (firstEl, secondPop) = pop firstPop
+        result = add2 firstEl secondEl
+        newStack = push secondPop (result)
+
+-- | utilized by the add function to use the + operator
+add2 :: StackElem -> StackElem -> StackElem
+add2 a b = do
+      case a of
+        (Ttypes( CustomNuma i)) -> case b of
+            (Ttypes( CustomNuma y)) -> (Ttypes ( CustomNuma (i + y))) 
+            _ -> undefined
+        _ -> undefined
+
+-- | Our subtraction function
+sub :: Stack -> Stack
+sub stack = newStack
+    where
+        (secondEl, firstPop) = pop stack
+        (firstEl, secondPop) = pop firstPop
+        result = sub2 firstEl secondEl
+        newStack = push secondPop (result)
+
+-- | utilized by the sub function to use the - operator
+sub2 :: StackElem -> StackElem -> StackElem
+sub2 a b = do
+      case a of
+        (Ttypes( CustomNuma i)) -> case b of
+            (Ttypes( CustomNuma y)) -> (Ttypes ( CustomNuma (i - y))) 
+            _ -> undefined
+        _ -> undefined
+
+-- | our division function
+diva :: Stack -> Stack
+diva stack = newStack
+    where
+        (secondEl, firstPop) = pop stack
+        (firstEl, secondPop) = pop firstPop
+        result = div2 firstEl secondEl
+        newStack = push secondPop (result)
+
+-- | utilized by diva to use the / operator
+div2 :: StackElem -> StackElem -> StackElem
+div2 a b = do
+      case a of
+        (Ttypes( CustomNuma i)) -> case b of
+            (Ttypes( CustomNuma y)) -> (Ttypes ( CustomNuma (i / y))) 
+            _ -> undefined
+        _ -> undefined
+
+-- | function for bool operators && and ||
+boolOperation :: Stack -> String -> Stack
+boolOperation stack string = do
+    let (firstElem, stack2) = pop stack
+    let (secondElem, stack3) = pop stack2
+    case string of
+        "&&" -> if firstElem == (Ttypes (Tbool(False))) || secondElem == (Ttypes (Tbool(False))) then
+                push stack3 (Ttypes (Tbool(False)))
+                else push stack3 (Ttypes( Tbool(True) ))
+        "||"-> if firstElem == (Ttypes (Tbool(True))) || secondElem == (Ttypes (Tbool(True))) then
+                push stack3 (Ttypes (Tbool(True)))
+                else push stack3 (Ttypes( Tbool(False) ))
+        _-> undefined
 
 
 makeTlist :: [String] -> ([StackElem], [String])
