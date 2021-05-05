@@ -6,44 +6,69 @@ import Data.Char
 import Data.Maybe
 import Data.List
 
-
-data Ttypes = Tint      Int
-              | Tfloat  Float
+-- | Custom datatypes for the interpreter
+data Ttypes = CustomNuma CustomNum
               | Tstring String
               | Tbool   Bool
---              | Tlist   [Ttypes]
---              | TemptyList
-              deriving Show
+              | Tnothing
+              deriving (Eq)
 
---data StackElem = Ttypes Ttypes | Tlist[StackElem]
-data StackElem = Ttypes Ttypes | Tlist[StackElem] deriving Show
+-- | The numerical datatypes
+data CustomNum = Tint Int
+                 | Tfloat Float
+                 deriving (Show, Eq)
 
---type Stack = [Maybe StackElem]
+-- | Stack elements consisting of the datatypes
+data StackElem = Ttypes Ttypes | Tlist[StackElem] deriving (Eq)
+
+-- The stack itself
 type Stack = [StackElem]
---type ProgState = State Stack Stack
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
---type Stack = [Either String Float]
+-- | Numerical instance letting us use the +,* and - operators across our types
+instance Num CustomNum where
+    (Tint i) + (Tint i2) = Tint (i + i2)
+    (Tfloat i) + (Tfloat i2) = Tfloat (i + i2)
+    (Tint i) + (Tfloat i2) = Tfloat (fromIntegral(i) + i2)
+    (Tfloat i) + (Tint i2) = Tfloat (i + fromIntegral(i2))
 
---processLine :: String -> String
---processLine line = unwords $ map show $ evalState (processTokens $ words line) ([])
+    (Tint i) - (Tint i2) = Tint (i2 - i)
+    (Tfloat i) - (Tfloat i2) = Tfloat (i2 - i)
+    (Tint i) - (Tfloat i2) = Tfloat (fromIntegral(i) - i2)
+    (Tfloat i) - (Tint i2) = Tfloat (i - fromIntegral(i2))
+
+    (Tint i) * (Tint i2) = Tint (i * i2)
+    (Tfloat i) * (Tfloat i2) = Tfloat (i * i2)
+    (Tint i) * (Tfloat i2) = Tfloat (fromIntegral(i) * i2)
+    (Tfloat i) * (Tint i2) = Tfloat (i * fromIntegral(i2))
+
+-- | Fractional instance letting us use the / operator across our types
+instance Fractional CustomNum where
+    (Tint i) / (Tint i2) = Tfloat (fromIntegral(i2) / fromIntegral(i))
+    (Tfloat i) / (Tfloat i2) = Tfloat (i2 / i)
+    (Tint i) / (Tfloat i2) = Tfloat (fromIntegral(i) / i2)
+    (Tfloat i) / (Tint i2) = Tfloat (i / fromIntegral(i2))
+
+-- | Instance making our stack look as desired when printed
+instance Show Btypes where
+    show (CustomNuma i) = show i
+    show (Tbool i) = "Tbool " ++ show i
+    show (Tstring i) = "Tstring " ++ show i
+  
+    
+-- | Instance making our stack look as desired when printed
+instance Show BprogElement where
+    show (Ttypes i) = show i
 
 toWords :: String -> [String]
 toWords x = words x
-
---processTokens :: [String] -> ProgState
---processTokens [] = do
---    stack <- get
---    return stack
-
---processTokens (x:xs)
---    | x == 
 
 -- | Creating the tokens HUSK Å KOMMENTER VEKK DENNE IGJEN
 parse :: [String] -> Stack -> Stack
 parse [] stack = stack
 parse (x:xs) stack
+
+    -- + operator for ints and floats
+    | x == "+"
 
     -- Check string
     | x == "\"" = do
@@ -106,10 +131,6 @@ parseToObj (x:xs) lst
     | otherwise = error ("Something is fucked regarding the parsing of types within lists: Cannot parse " ++ "\"" ++ x ++ "\"")
 
 
-
---makeTlist :: [String] -> ([StackElem], [String])
---makeTlist :: Monad m => [String] -> m ([StackElem], [String])
---makeTlist :: Monad m => [[Char]] -> m [StackElem]
 makeTlist :: [String] -> ([StackElem], [String])
 makeTlist s = do
     let numNest = cnt "[" s
@@ -121,16 +142,7 @@ makeTlist s = do
     --return completeLst
     case isJust stop2 of
         True  -> (completeLst, remaining)
-        False -> error "Thou hath not c"
-
---cutLength :: Monad m => [[Char]] -> m [[Char]]
-cutLength s = do
-    let numNest = cnt "[" s
-    let stop = last (findIndices (=="]") s)
-    let lst = [s !! i | i <- [0..length s], i < stop]
-    let remaining = drop (length lst + 1) s
-    return remaining
-
+        False -> error "Thou hath not closed thy list"
 
 makeTstring :: [String] -> (StackElem, [String])
 makeTstring s = do
@@ -162,6 +174,8 @@ isBool x
     | x == "False" = True
     | otherwise = False
 
+-- | Function for checking if an Int really is an Int. Inspired for stackoverflow
+--https://stackoverflow.com/questions/30029029/haskell-check-if-string-is-valid-number
 isInt :: String -> Bool
 isInt ""  = False
 isInt "." = False
@@ -179,22 +193,6 @@ isFloat xs  =
         ('.':ys) -> all isDigit ys
         _ -> False
 
-tokenCheck :: [String] -> IO ()
-tokenCheck (x:xs) = do
-    putStrLn(x)
-    putStrLn(tail x)
-    --print (head x)
-    --let x = words com
-    --putStrLn x
-
---addStack :: StackElem -> ProgState
---addStack :: StackElem -> ProgState
---addStack x = do
---    stack <- get
---    let newStack = x : stack
---    put newStack
---    return newStack
-
 -- | Checking how many times a thing is in a list 3.
 cnt ::  (Eq a) => a -> [a] -> Int
 cnt a [] = 0
@@ -208,9 +206,10 @@ push stack x = x : stack
 push2 :: Stack -> [StackElem] -> Stack
 push2 stack xs = stack ++ xs
 
-pop :: Stack -> Stack
+-- | Pops an element off the stack and returns it
+pop :: Stack -> (StackElem, Stack)
 pop [] = error "CXannot pop empty stack dummy"
-pop x = tail x
+pop (x:xs) = (x, xs)
 
 swap :: Stack -> Stack
 swap (a:b:xs) = b : a : xs
@@ -219,7 +218,3 @@ swap _ = error "Cannot swap, less than two elements"
 dup :: Stack -> Stack
 dup (x:xs) = x : x : xs
 dup _ = error "Cannot dup, stack empty"
-
-
-
---tCheck xs = head xs
