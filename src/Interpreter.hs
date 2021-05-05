@@ -16,7 +16,7 @@ data Ttypes = Tint      Int
               deriving Show
 
 --data StackElem = Ttypes Ttypes | Tlist[StackElem]
-data StackElem = Ttypes Ttypes | Tlist[Ttypes] deriving Show
+data StackElem = Ttypes Ttypes | Tlist[StackElem] deriving Show
 
 --type Stack = [Maybe StackElem]
 type Stack = [StackElem]
@@ -51,7 +51,12 @@ parse (x:xs) stack
         let newStack = push stack (fst elem)
         parse (snd elem) newStack
 
-    -- | x == "[" = 
+    -- | x == "[" = do
+    --    let elem = makeTlist xs
+    --    let newStack = push stack (head (head elem))
+    --    let remainingString = cutLength xs
+    --    parse xs newStack
+
 
     -- Check for int
     | isJust (makeTint x) = do
@@ -69,6 +74,55 @@ parse (x:xs) stack
         parse xs newStack
     
     | otherwise = error ("Neeey, there hath been a parsing error: Cannot parse " ++ "\"" ++ x ++ "\"")
+
+parseToObj :: [String] -> [StackElem] -> [StackElem]
+parseToObj [] lst = lst
+parseToObj (x:xs) lst
+    
+    | x == "\"" = do
+        let elem = makeTstring xs
+        --let conLst = Tlist [fst elem]
+        let newLst = lst ++ [fst elem]
+        parseToObj (snd elem) newLst
+    
+    -- | x == "[" = makeTlist
+
+    | isJust (makeTint x) = do
+        let newLst = lst ++ [(fromJust $ makeTint x)]
+        parseToObj xs newLst
+    
+    
+    | isJust (makeTfloat x) = do
+        let newLst = lst ++ [(fromJust $ makeTfloat x)]
+        parseToObj xs newLst
+    
+    
+    | isJust (makeTbool x) = do
+        let newLst = lst ++ [(fromJust $ makeTbool x)]
+        parseToObj xs newLst
+
+    | otherwise = error ("Something is fucked regarding the parsing of types within lists: Cannot parse " ++ "\"" ++ x ++ "\"")
+
+
+
+--makeTlist :: [String] -> ([StackElem], [String])
+--makeTlist :: Monad m => [String] -> m ([StackElem], [String])
+makeTlist :: Monad m => [[Char]] -> m [StackElem]
+makeTlist s = do
+    let numNest = cnt "[" s
+    let stop = last (findIndices (=="]") s)
+    let lst = [s !! i | i <- [0..length s], i < stop]
+    let remaining = drop (length lst + 1) s
+    let completeLst = parseToObj lst []-- send lst til parseToObj
+    return completeLst
+
+--cutLength :: Monad m => [[Char]] -> m [[Char]]
+cutLength s = do
+    let numNest = cnt "[" s
+    let stop = last (findIndices (=="]") s)
+    let lst = [s !! i | i <- [0..length s], i < stop]
+    let remaining = drop (length lst + 1) s
+    return remaining
 
 
 makeTstring :: [String] -> (StackElem, [String])
@@ -133,6 +187,13 @@ tokenCheck (x:xs) = do
 --    let newStack = x : stack
 --    put newStack
 --    return newStack
+
+-- | Checking how many times a thing is in a list 3.
+cnt ::  (Eq a) => a -> [a] -> Int
+cnt a [] = 0
+cnt a (x:xs) -- same as using head
+    | a == x    = 1 + cnt a xs
+    | otherwise = cnt a xs
 
 push :: Stack -> StackElem -> Stack
 push stack x = x : stack
