@@ -68,7 +68,69 @@ parse [] stack = stack
 parse (x:xs) stack
 
     -- + operator for ints and floats
-    | x == "+"
+    | x == "+" = do
+        let newStack = add stack
+        parse xs newStack
+
+    -- - operator for ints and floats
+    x == "-" = do
+        let newStack = sub stack
+        parse xs newStack
+    
+    -- Multiplication
+    | x == "*" = do
+        let newStack = mult stack
+        parse xs newStack
+    
+    -- / operator for ints and floats
+    | x == "/" = do
+        let newStack = diva stack
+        parse xs newStack
+
+    -- Pop command for the stack
+    | x == "pop" = do
+        let (popped, newStack) = pop stack
+        parse xs newStack
+
+    -- Swap command for stack
+    | x == "swap" = do
+        let newStack = swap stack
+        parse xs newStack
+
+    -- Dup command for the stack
+    | x == "dup" = do
+        let newStack = dup stack
+        parse xs newStack
+
+    -- AND operator
+    | x == "&&" = do
+        let newStack = boolOperation stack x
+        parse xs newStack
+    
+    -- OR operator
+    | x == "||" = do
+        let newStack = boolOperation stack x
+        parse xs newStack
+    
+    -- Takes an integer in a string and turns it into a Tint
+    | x == "parseInteger" = do
+        let (popped, newStack) = pop stack
+        case popped of
+            (Ttypes (Tstring s)) -> do
+                let a = fromJust (makeTint s)
+                let newStack2 = push newStack (a)
+                parse xs newStack2
+            _ -> error "Failed to parse int"
+    
+    -- Takes a float in a string and turns it into a Tfloat
+    | x == "parseFloat" = do
+        let (popped, newStack) = pop stack
+        case popped of
+            (Ttypes (Tstring s)) -> do
+                let a = fromJust (makeTfloat s)
+                let newStack2 = push newStack (a)
+                parse xs newStack2
+            _ -> error "Failed to parse float"
 
     -- Check string
     | x == "\"" = do
@@ -76,6 +138,7 @@ parse (x:xs) stack
         let newStack = push stack (fst elem)
         parse (snd elem) newStack
 
+    -- Parsing lists
     | x == "[" = do
         let elem = makeTlist xs
         let newStack = push stack (Tlist (fst elem))
